@@ -91,7 +91,6 @@ class NodeItem(QGraphicsObject):
         port = portFullname.split(':')
         assert len(port) == 3
         assert port[0] == self.name()
-        nodeName = port[0]
         connectorName = port[1]
         portName = port[2]
 
@@ -102,7 +101,6 @@ class NodeItem(QGraphicsObject):
         port = portFullname.split(':')
         assert len(port) == 3
         assert port[0] == self.name()
-        nodeName = port[0]
         connectorName = port[1]
         portName = port[2]
 
@@ -113,7 +111,6 @@ class NodeItem(QGraphicsObject):
         port = portFullname.split(':')
         assert len(port) == 3
         assert port[0] == self.name()
-        nodeName = port[0]
         connectorName = port[1]
         portName = port[2]
 
