@@ -10,12 +10,12 @@ class PortItem(QGraphicsEllipseItem):
 
         self._name = name
 
-        node = self.parentItem()
-        while node.parentItem():
-            node = node.parentItem()
+        #node = self.parentItem()
+        #while node.parentItem():
+        #    node = node.parentItem()
         self._fullname = parent.fullname() + ':' + name
 
-        self._nodeItem = node
+        #self._nodeItem = node
 
         pen = QPen(QColor('#000000'))
         pen.setWidth(3)
@@ -53,8 +53,7 @@ class PortItem(QGraphicsEllipseItem):
             event(QMouseEvent): Mouse event.
         """
         mouseEvent.accept()
-        #pos1 = self.mapToItem(self._nodeItem, self.pos())
-        pos1 = self._nodeItem.mapToScene(self.pos())
+        pos1 = self.scenePos()
         pos2 = mouseEvent.scenePos()
         self.scene().ioLineDrag(self, pos1, pos2, done=False)
         self._isDraggingLine = True
@@ -67,8 +66,7 @@ class PortItem(QGraphicsEllipseItem):
         """
         mouseEvent.accept()
         if self._isDraggingLine:
-            #pos1 = self.mapToItem(self._nodeItem, self.pos())
-            pos1 = self._nodeItem.mapToScene(self.pos())
+            pos1 = self.scenePos()
             pos2 = mouseEvent.scenePos()
             self.scene().ioLineDrag(self, pos1, pos2, done=True)
 

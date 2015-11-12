@@ -29,6 +29,9 @@ def main():
 
     app.exec_()
 
+    # Workaround for GTK assertion fails on exit
+    w = None
+
 
 if __name__ == '__main__':
     main()

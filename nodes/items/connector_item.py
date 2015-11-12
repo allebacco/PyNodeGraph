@@ -2,7 +2,7 @@ import math
 
 from PyQt4.Qt import Qt
 from PyQt4.QtCore import QRectF, QPointF
-from PyQt4.QtGui import QGraphicsPathItem, QPen, QBrush, QColor, QPainterPath
+from PyQt4.QtGui import QGraphicsPathItem, QPen, QBrush, QColor, QPainterPath, QGraphicsItem
 
 from port_item import PortItem
 
@@ -64,9 +64,6 @@ class BaseConnectorItem(QGraphicsPathItem):
 
         self._ioDragFirstPos = None
 
-        #self.setAcceptedMouseButtons(Qt.LeftButton)
-        #self.setAcceptHoverEvents(True)
-
     def ioType(self):
         return self._ioType
 
@@ -86,49 +83,14 @@ class BaseConnectorItem(QGraphicsPathItem):
         self.setIsHover(False)
         QGraphicsPathItem.hoverLeaveEvent(self, event)
 
-    '''
-    def mousePressEvent(self, mouseEvent):
-        """Manage the mouse pressing.
-
-        Args:
-            event(QMouseEvent): Mouse event.
-        """
-        self._ioDragFirstPos = mouseEvent.scenePos()
-
-    def mouseMoveEvent(self, mouseEvent):
-        """Manage the mouse movement while it is pressed.
-
-        Args:
-            event(QMouseEvent): Mouse event.
-        """
-        if self._ioDragFirstPos is not None:
-            pos = mouseEvent.scenePos()
-            self.scene().ioLineDrag(self, self._ioDragFirstPos, pos, done=False)
-
-    def mouseReleaseEvent(self, mouseEvent):
-        """Manage the mouse releasing.
-
-        Args:
-            event(QMouseEvent): Mouse event.
-        """
-        if self._ioDragFirstPos is not None:
-            pos = mouseEvent.scenePos()
-            self.scene().ioLineDrag(self, self._ioDragFirstPos, pos, done=True)
-
-        self._ioDragFirstPos = None
-
-    def canAcceptConnection(self, fromItem):
-        return self.parentItem() != fromItem.parentItem()
-    '''
-
 
 class IOConnectorItem(BaseConnectorItem):
 
-    def __init__(self, connectionNames, angle, arcLen, ioType, parent=None):
+    def __init__(self, name, connectionNames, angle, arcLen, ioType, parent=None):
         BaseConnectorItem.__init__(self, 50, 45, angle, arcLen, parent=parent)
 
         self._ioType = ioType
-        self._name = 'in' if ioType == BaseConnectorItem.IOTypeIn else 'out'
+        self._name = name
         self._fullname = str(self.parentItem().name()) + ':' + self._name
 
         self._connections = dict()
@@ -144,6 +106,8 @@ class IOConnectorItem(BaseConnectorItem):
             port.setPos(portPos[i])
             self._ports[name] = port
 
+        self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges, True)
+
     def name(self):
         return self._name
 
@@ -156,38 +120,62 @@ class IOConnectorItem(BaseConnectorItem):
     def connections(self):
         return self._connections
 
-    '''
-    def __getitem__(self, name):
-        return self._connections[name]
+    def addConnection(self, portName, conn):
+        if portName in self._connections:
+            return False
 
-    def __setitem__(self, name, connection):
-        if name in self._connections:
-            # remove previous connection
-            self.__delitem__(name)
+        self._connections[portName] = conn
+        self._addConnection(portName, conn)
+        return True
 
-        self._connections[name] = connection
+    def _addConnection(self, portName, conn):
+        raise NotImplementedError()
 
-    def __delitem__(self, name):
-        pass
+    def removeConnection(self, portName):
+        if portName in self._connections:
+            del self._connections[portName]
 
-    def __contains__(self, name):
-        pass
-    '''
+    def isConnected(self, portName):
+        return portName in self._connections
 
-    def canAcceptConnection(self, fromItem):
-        ok = fromItem._ioType != self._ioType and \
-             self.parentItem() != fromItem.parentItem()
-        return ok
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemScenePositionHasChanged:
+            self.updateConnectionItems()
+
+        return BaseConnectorItem.itemChange(self, change, value)
+
+    def updateConnectionItems(self):
+        raise NotImplementedError()
 
 
 class InputConnectorItem(IOConnectorItem):
 
-    def __init__(self, connectionNames, parent=None):
-        IOConnectorItem.__init__(self, connectionNames, 180, 80, BaseConnectorItem.IOTypeIn, parent=parent)
+    def __init__(self, name, connectionNames, parent=None):
+        IOConnectorItem.__init__(self, name, connectionNames, 180, 80, BaseConnectorItem.IOTypeIn, parent=parent)
+
+    def updateConnectionItems(self):
+        ports = self._ports
+        for name, connItem in self._connections.iteritems():
+            pos = ports[name].scenePos()
+            connItem.setEnd(pos)
+
+    def _addConnection(self, portName, conn):
+        pos = self._ports[portName].scenePos()
+        conn.setEnd(pos)
 
 
 class OutputConnectorItem(IOConnectorItem):
 
-    def __init__(self, connectionNames, parent=None):
-        IOConnectorItem.__init__(self, connectionNames, 0, 80, BaseConnectorItem.IOTypeOut, parent=parent)
+    def __init__(self, name, connectionNames, parent=None):
+        IOConnectorItem.__init__(self, name, connectionNames, 0, 80, BaseConnectorItem.IOTypeOut, parent=parent)
 
+    def updateConnectionItems(self):
+        parent = self.parentItem()
+        ports = self._ports
+        for name, connItem in self._connections.iteritems():
+            pos = parent.mapToScene(ports[name].pos())
+            connItem.setStart(pos)
+
+    def _addConnection(self, portName, conn):
+        pos = self._ports[portName].scenePos()
+        conn.setStart(pos)
