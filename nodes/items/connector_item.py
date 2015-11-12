@@ -4,7 +4,7 @@ from PyQt4.Qt import Qt
 from PyQt4.QtCore import QRectF, QPointF
 from PyQt4.QtGui import QGraphicsPathItem, QPen, QBrush, QColor, QPainterPath
 
-from items.jack_item import JackItem
+from port_item import PortItem
 
 
 def anchors(count, startAngle, arcLen, radiusOut, radiusIn):
@@ -18,14 +18,13 @@ def anchors(count, startAngle, arcLen, radiusOut, radiusIn):
     for i in xrange(count):
         x = radius * math.cos(angle*deg2rad)
         y = radius * math.sin(angle*deg2rad)
-        print (x, y)
         points.append(QPointF(x, y))
         angle += angleIncr
 
     return points
 
 
-class IOComponentItem(QGraphicsPathItem):
+class BaseConnectorItem(QGraphicsPathItem):
 
     IOTypeIn = 1
     IOTypeOut = 1 << 1
@@ -65,8 +64,8 @@ class IOComponentItem(QGraphicsPathItem):
 
         self._ioDragFirstPos = None
 
-        self.setAcceptedMouseButtons(Qt.LeftButton)
-        self.setAcceptHoverEvents(True)
+        #self.setAcceptedMouseButtons(Qt.LeftButton)
+        #self.setAcceptHoverEvents(True)
 
     def ioType(self):
         return self._ioType
@@ -87,6 +86,7 @@ class IOComponentItem(QGraphicsPathItem):
         self.setIsHover(False)
         QGraphicsPathItem.hoverLeaveEvent(self, event)
 
+    '''
     def mousePressEvent(self, mouseEvent):
         """Manage the mouse pressing.
 
@@ -119,26 +119,36 @@ class IOComponentItem(QGraphicsPathItem):
 
     def canAcceptConnection(self, fromItem):
         return self.parentItem() != fromItem.parentItem()
+    '''
 
 
-class IOConnector(IOComponentItem):
+class IOConnectorItem(BaseConnectorItem):
 
     def __init__(self, connectionNames, angle, arcLen, ioType, parent=None):
-        IOComponentItem.__init__(self, 50, 45, angle, arcLen, parent=parent)
+        BaseConnectorItem.__init__(self, 50, 45, angle, arcLen, parent=parent)
 
         self._ioType = ioType
+        self._name = 'in' if ioType == BaseConnectorItem.IOTypeIn else 'out'
+        self._fullname = str(self.parentItem().name()) + ':' + self._name
+
         self._connections = dict()
         self._connectionNames = connectionNames
-        self._jack = dict()
+        self._ports = dict()
 
         connCount = len(self._connectionNames)
         startAngle = angle - arcLen / 2.0
-        jackPos = anchors(connCount, startAngle, arcLen, 50, 45)
+        portPos = anchors(connCount, startAngle, arcLen, 50, 45)
         for i in xrange(connCount):
             name = connectionNames[i]
-            jack = JackItem(name, 3, parent=self)
-            jack.setPos(jackPos[i])
-            self._jack[name] = jack
+            port = PortItem(name, 3, parent=self)
+            port.setPos(portPos[i])
+            self._ports[name] = port
+
+    def name(self):
+        return self._name
+
+    def fullname(self):
+        return self._fullname
 
     def connectionNames(self):
         return self._connectionNames
@@ -170,14 +180,14 @@ class IOConnector(IOComponentItem):
         return ok
 
 
-class InputConnector(IOConnector):
+class InputConnectorItem(IOConnectorItem):
 
     def __init__(self, connectionNames, parent=None):
-        IOConnector.__init__(self, connectionNames, 180, 80, IOComponentItem.IOTypeIn, parent=parent)
+        IOConnectorItem.__init__(self, connectionNames, 180, 80, BaseConnectorItem.IOTypeIn, parent=parent)
 
 
-class OutputConnector(IOConnector):
+class OutputConnectorItem(IOConnectorItem):
 
     def __init__(self, connectionNames, parent=None):
-        IOConnector.__init__(self, connectionNames, 0, 80, IOComponentItem.IOTypeOut, parent=parent)
+        IOConnectorItem.__init__(self, connectionNames, 0, 80, BaseConnectorItem.IOTypeOut, parent=parent)
 

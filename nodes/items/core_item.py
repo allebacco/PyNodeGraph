@@ -2,7 +2,7 @@ from PyQt4.QtCore import QRectF
 from PyQt4.QtGui import QGraphicsEllipseItem, QPen, QBrush, QColor
 
 
-class CoreComponentItem(QGraphicsEllipseItem):
+class CoreItem(QGraphicsEllipseItem):
 
     def __init__(self, radius, parent=None):
         QGraphicsEllipseItem.__init__(self, QRectF(-radius, -radius, radius*2.0, radius*2.0), parent=parent)

@@ -1,8 +1,8 @@
-from PyQt4.Qt import Qt, pyqtSignal
+from PyQt4.Qt import Qt, pyqtSignal, pyqtSlot
 from PyQt4.QtCore import QLineF
 from PyQt4.QtGui import QGraphicsScene
 
-from nodes.io_component_item import IOComponentItem
+from nodes.items.jack_item import JackItem
 from nodes.dragged_line_component import DraggedLineComponent
 
 
@@ -55,8 +55,8 @@ class NodeGraphScene(QGraphicsScene):
         QGraphicsScene.mouseReleaseEvent(self, mouseEvent)
 
     def ioLineDrag(self, startItem, pos0, pos1, done=False):
+        line = QLineF(pos0, pos1)
         if self._draggedLineItem is None:
-            line = QLineF(pos0, pos1)
             self._draggedLineItem = DraggedLineComponent(line)
             self.addItem(self._draggedLineItem)
         else:
@@ -64,14 +64,13 @@ class NodeGraphScene(QGraphicsScene):
 
         underItems = self.items(pos1)
         vaildItem = None
-        for item in underItems:
-            if isinstance(item, IOComponentItem) and \
-               item.canAcceptConnection(startItem):
-                print 'valid'
-                vaildItem = item
-                break
-            else:
-                print 'invalid'
+
+        if line.length() > 5.0:
+            # Check if line is over other JackItem
+            for item in underItems:
+                if isinstance(item, JackItem):
+                    vaildItem = item
+                    break
 
         self._draggedLineItem.showEndpoint(vaildItem is not None)
 
@@ -81,6 +80,14 @@ class NodeGraphScene(QGraphicsScene):
 
             if vaildItem is not None:
                 # Request connection creation
-                name1 = startItem.parentItem().name()
-                name2 = vaildItem.parentItem().name()
-                self.connectionCreationRequest.emit(name1, name2)
+                name1 = startItem.fullname()
+                name2 = vaildItem.fullname()
+                if ':in:' in name1:
+                    self.connectionCreationRequest.emit(name2, name1)
+                else:
+                    self.connectionCreationRequest.emit(name1, name2)
+
+    @pyqtSlot(str, str)
+    def onConnectionCreationRequest(self, outPort, inPort):
+        pass
+

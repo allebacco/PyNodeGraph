@@ -2,16 +2,16 @@ from PyQt4.Qt import Qt
 from PyQt4.QtCore import QRectF
 from PyQt4.QtGui import QGraphicsItem, QGraphicsObject
 
-from core_component_item import CoreComponentItem
-from io_component_item import InputConnector, OutputConnector
+from items.core_item import CoreItem
+from items.connector_item import InputConnectorItem, OutputConnectorItem
 
 
-class NodeGraphicsItem(QGraphicsObject):
+class NodeItem(QGraphicsObject):
 
     def __init__(self, name, parent=None):
         QGraphicsObject.__init__(self, parent=parent)
 
-        self._coreItem = CoreComponentItem(40, parent=self)
+        self._coreItem = CoreItem(40, parent=self)
         self._inputConnector = None
         self._outputConnector = None
 
@@ -25,7 +25,7 @@ class NodeGraphicsItem(QGraphicsObject):
         self.setFlag(QGraphicsItem.ItemIsMovable)
 
     def name(self):
-        return self.objectName()
+        return str(self.objectName())
 
     def boundingRect(self):
         return self._coreItem.boundingRect().adjusted(-2, -2, 2, 2)
@@ -56,7 +56,7 @@ class NodeGraphicsItem(QGraphicsObject):
         inputConn = None
 
         if names is not None and len(names) > 0:
-            inputConn = InputConnector(names, parent=self)
+            inputConn = InputConnectorItem(names, parent=self)
 
         self._inputConnector = inputConn
 
@@ -70,6 +70,6 @@ class NodeGraphicsItem(QGraphicsObject):
         outputConn = None
 
         if names is not None and len(names) > 0:
-            outputConn = OutputConnector(names, parent=self)
+            outputConn = OutputConnectorItem(names, parent=self)
 
         self._outputConnector = outputConn
