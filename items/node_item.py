@@ -2,8 +2,8 @@ from PyQt4.Qt import Qt
 from PyQt4.QtCore import QRectF
 from PyQt4.QtGui import QGraphicsItem, QGraphicsObject
 
-from items.core_item import CoreItem
-from items.connector_item import InputConnectorItem, OutputConnectorItem
+from core_item import CoreItem
+from connector_item import InputConnectorItem, OutputConnectorItem
 
 
 class NodeItem(QGraphicsObject):
@@ -49,7 +49,7 @@ class NodeItem(QGraphicsObject):
         event.accept()
         self._isHover = False
 
-    def setInputs(self, names):
+    def addDefaultInputConnector(self, names):
         inputConn = self._inputConnector
 
         # Remove previous connector
@@ -64,13 +64,14 @@ class NodeItem(QGraphicsObject):
         self._inputConnector = inputConn
         self._connectors['in'] = inputConn
 
-    def setOutputs(self, names):
-        outputConn = self._outputConnector
+    def addDefaultOutputConnector(self, names):
+        outputConn = self._connectors.get('out', None)
 
         # Remove previous connector
         if outputConn is not None:
             outputConn.setParentItem(None)
             self.scene().removeItem(outputConn)
+            del self._connectors['out']
         outputConn = None
 
         if names is not None and len(names) > 0:
@@ -96,6 +97,13 @@ class NodeItem(QGraphicsObject):
 
         connector = self._connectors[connectorName]
         return connector.addConnection(portName, connection)
+
+    def removeConnector(self, connectorName):
+        connector = self._connectors.get(connectorName, None)
+        if connector is None:
+            return
+
+        # TODO
 
     def removeConnection(self, portFullname):
         port = portFullname.split(':')

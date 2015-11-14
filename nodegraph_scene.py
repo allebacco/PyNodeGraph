@@ -2,10 +2,12 @@ from PyQt4.Qt import Qt, pyqtSignal, pyqtSlot
 from PyQt4.QtCore import QLineF
 from PyQt4.QtGui import QGraphicsScene
 
-from nodes.items.port_item import PortItem
-from nodes.dragged_line_component import DraggedLineComponent
-from nodes.node_item import NodeItem
-from nodes.connection_item import ConnectionItem
+from items.port_item import PortItem
+from items.dragged_line_item import DraggedLineItem
+from items.node_item import NodeItem
+from items.connection_item import ConnectionItem
+
+from node_utils import nodeNameFromFullname
 
 
 class NodeGraphScene(QGraphicsScene):
@@ -17,7 +19,7 @@ class NodeGraphScene(QGraphicsScene):
 
         self._draggedLineItem = None
 
-        self.connectionCreationRequest.connect(self.onConnectionCreationRequest)
+        self.connectionCreationRequest.connect(self.addConnection)
 
     def setSize(self, width, height):
         dw = (width - self.width()) / 2.0
@@ -36,12 +38,21 @@ class NodeGraphScene(QGraphicsScene):
         for item in self.items():
             if isinstance(item, NodeItem):
                 nodes.append(item)
+        return nodes
 
     def nodeFromName(self, name):
         for item in self.items():
             if isinstance(item, NodeItem):
                 if item.name() == name:
                     return item
+        return None
+
+    def connectionFromName(self, name):
+        for item in self.items():
+            if isinstance(item, ConnectionItem):
+                if item.name() == name:
+                    return item
+        return None
 
     def mousePressEvent(self, mouseEvent):
         """Manage the mouse pressing.
@@ -71,9 +82,8 @@ class NodeGraphScene(QGraphicsScene):
         QGraphicsScene.mouseReleaseEvent(self, mouseEvent)
 
     def ioLineDrag(self, startItem, pos0, pos1, done=False):
-        line = QLineF(pos0, pos1)
         if self._draggedLineItem is None:
-            self._draggedLineItem = DraggedLineComponent(line)
+            self._draggedLineItem = DraggedLineItem(pos0, pos1)
             self.addItem(self._draggedLineItem)
         else:
             self._draggedLineItem.setEndpoint(pos1)
@@ -81,7 +91,7 @@ class NodeGraphScene(QGraphicsScene):
         underItems = self.items(pos1)
         vaildItem = None
 
-        if line.length() > 5.0:
+        if QLineF(pos0, pos1).length() > 5.0:
             # Check if line is over other PortItem
             for item in underItems:
                 if isinstance(item, PortItem):
@@ -102,7 +112,7 @@ class NodeGraphScene(QGraphicsScene):
                 self.connectionCreationRequest.emit(name1, name2)
 
     @pyqtSlot(str, str)
-    def onConnectionCreationRequest(self, port1Name, port2Name):
+    def addConnection(self, port1Name, port2Name):
         port1Name = str(port1Name)
         port2Name = str(port2Name)
 
@@ -122,5 +132,17 @@ class NodeGraphScene(QGraphicsScene):
 
         print 'New connection', port1Name, port2Name
 
+    def removeConnection(self, startName, endName):
+        if startName is not None:
+            nodeName = nodeNameFromFullname(startName)
+            node = self.nodeFromName(nodeName)
+            node.removeConnection(startName)
+        if endName is not None:
+            nodeName = nodeNameFromFullname(endName)
+            node = self.nodeFromName(nodeName)
+            node.removeConnection(endName)
 
-
+        name = str(startName) + '->' + str(endName)
+        conn = self.connectionFromName(name)
+        self.removeItem(conn)
+        del conn

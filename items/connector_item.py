@@ -86,7 +86,7 @@ class BaseConnectorItem(QGraphicsPathItem):
 
 class IOConnectorItem(BaseConnectorItem):
 
-    def __init__(self, name, connectionNames, angle, arcLen, ioType, parent=None):
+    def __init__(self, name, portNames, angle, arcLen, ioType, parent=None):
         BaseConnectorItem.__init__(self, 50, 45, angle, arcLen, parent=parent)
 
         self._ioType = ioType
@@ -94,14 +94,13 @@ class IOConnectorItem(BaseConnectorItem):
         self._fullname = str(self.parentItem().name()) + ':' + self._name
 
         self._connections = dict()
-        self._connectionNames = connectionNames
         self._ports = dict()
 
-        connCount = len(self._connectionNames)
+        connCount = len(portNames)
         startAngle = angle - arcLen / 2.0
         portPos = anchors(connCount, startAngle, arcLen, 50, 45)
         for i in xrange(connCount):
-            name = connectionNames[i]
+            name = portNames[i]
             port = PortItem(name, 3, parent=self)
             port.setPos(portPos[i])
             self._ports[name] = port
@@ -114,8 +113,8 @@ class IOConnectorItem(BaseConnectorItem):
     def fullname(self):
         return self._fullname
 
-    def connectionNames(self):
-        return self._connectionNames
+    def portNames(self):
+        return self._ports.keys()
 
     def connections(self):
         return self._connections
@@ -133,6 +132,10 @@ class IOConnectorItem(BaseConnectorItem):
 
     def removeConnection(self, portName):
         if portName in self._connections:
+            del self._connections[portName]
+
+    def removeAllConnections(self):
+        for portName in self._connections:
             del self._connections[portName]
 
     def isConnected(self, portName):
@@ -162,6 +165,7 @@ class InputConnectorItem(IOConnectorItem):
     def _addConnection(self, portName, conn):
         pos = self._ports[portName].scenePos()
         conn.setEnd(pos)
+        conn.setEndPortName(self._fullname)
 
 
 class OutputConnectorItem(IOConnectorItem):
@@ -179,3 +183,4 @@ class OutputConnectorItem(IOConnectorItem):
     def _addConnection(self, portName, conn):
         pos = self._ports[portName].scenePos()
         conn.setStart(pos)
+        conn.setStartPortName(self._fullname)

@@ -10,12 +10,7 @@ class PortItem(QGraphicsEllipseItem):
 
         self._name = name
 
-        #node = self.parentItem()
-        #while node.parentItem():
-        #    node = node.parentItem()
         self._fullname = parent.fullname() + ':' + name
-
-        #self._nodeItem = node
 
         pen = QPen(QColor('#000000'))
         pen.setWidth(3)
