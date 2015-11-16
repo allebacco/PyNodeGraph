@@ -12,14 +12,17 @@ from node_utils import nodeNameFromFullname
 
 class NodeGraphScene(QGraphicsScene):
 
-    connectionCreationRequest = pyqtSignal(str, str)
+    sigCreateConnection = pyqtSignal(str, str)
 
     def __init__(self, parent=None):
         QGraphicsScene.__init__(self, parent=parent)
 
         self._draggedLineItem = None
 
-        self.connectionCreationRequest.connect(self.addConnection)
+    @pyqtSlot(NodeItem)
+    def addNode(self, nodeItem):
+        assert isinstance(nodeItem, NodeItem)
+        self.addItem(nodeItem)
 
     def setSize(self, width, height):
         dw = (width - self.width()) / 2.0
@@ -109,7 +112,7 @@ class NodeGraphScene(QGraphicsScene):
                 # Request connection creation
                 name1 = startItem.fullname()
                 name2 = vaildItem.fullname()
-                self.connectionCreationRequest.emit(name1, name2)
+                self.sigCreateConnection.emit(name1, name2)
 
     @pyqtSlot(str, str)
     def addConnection(self, port1Name, port2Name):
@@ -118,6 +121,9 @@ class NodeGraphScene(QGraphicsScene):
 
         node1Name = port1Name.split(':')[0]
         node2Name = port2Name.split(':')[0]
+
+        if node1Name == node2Name:
+            raise RuntimeError('%s and %s belong to the same node %s' % (port1Name, port2Name, node1Name))
 
         node1 = self.nodeFromName(node1Name)
         node2 = self.nodeFromName(node2Name)
@@ -130,19 +136,55 @@ class NodeGraphScene(QGraphicsScene):
         node1.addConnection(port1Name, conn)
         node2.addConnection(port2Name, conn)
 
-        print 'New connection', port1Name, port2Name
+        assert conn.startName() is not None
+        assert conn.endName() is not None
 
-    def removeConnection(self, startName, endName):
-        if startName is not None:
-            nodeName = nodeNameFromFullname(startName)
-            node = self.nodeFromName(nodeName)
-            node.removeConnection(startName)
-        if endName is not None:
-            nodeName = nodeNameFromFullname(endName)
-            node = self.nodeFromName(nodeName)
-            node.removeConnection(endName)
+    @pyqtSlot(str, str)
+    def removeConnectionByPortNames(self, startName, endName):
+        startName = str(startName)
+        endName = str(endName)
 
+        # Disconnect from start port
+        nodeName = nodeNameFromFullname(startName)
+        node = self.nodeFromName(nodeName)
+        node.removeConnectionByPortName(startName)
+
+        # Disconnect from end port
+        nodeName = nodeNameFromFullname(endName)
+        node = self.nodeFromName(nodeName)
+        node.removeConnectionByPortName(endName)
+
+        # Remove connection
         name = str(startName) + '->' + str(endName)
         conn = self.connectionFromName(name)
         self.removeItem(conn)
-        del conn
+
+    @pyqtSlot(ConnectionItem)
+    def removeConnection(self, connectionItem):
+        assert isinstance(connectionItem, ConnectionItem)
+        assert connectionItem.startName() is not None
+        assert connectionItem.endName() is not None
+
+        self.removeConnectionByPortNames(connectionItem.startName(), connectionItem.endName())
+
+    @pyqtSlot(NodeItem)
+    def removeNode(self, nodeItem):
+        assert isinstance(nodeItem, NodeItem)
+
+        # Remove all connectors
+        connectorNames = nodeItem.connectorNames()
+        for cname in connectorNames:
+            conctorItem = nodeItem.connector(cname)
+
+            # Remove all connections
+            for connection in conctorItem.connections().values():
+                self.removeConnection(connection)
+
+            nodeItem.removeConnector(conctorItem)
+
+        # Remove the node
+        self.removeItem(nodeItem)
+
+        print 'Nodes in scene:'
+        for item in self.nodeItems():
+            print '\t', item.name()

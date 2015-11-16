@@ -8,7 +8,7 @@ class NodeGraphView(QGraphicsView):
     """Graphics view .
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, scene=None, parent=None):
         """Constructor.
 
         Args:
@@ -16,8 +16,11 @@ class NodeGraphView(QGraphicsView):
             parent(QObject): Parent object, default `None`
         """
         QGraphicsView.__init__(self, parent=parent)
-        self.setScene(NodeGraphScene())
-        self._lastMousePos = None
+
+        if scene is None:
+            self.setScene(NodeGraphScene())
+        else:
+            self.setScene(scene)
 
     def resizeEvent(self, event):
         """Resize the widget. Reimplemented from `QGraphicsView`.

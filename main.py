@@ -12,14 +12,16 @@ def main():
     w.setWindowTitle("NodeGraphView - Test")
 
     scene = w.scene()
+    scene.sigCreateConnection.connect(scene.addConnection)
+
     node1 = NodeItem('Node1')
-    scene.addItem(node1)
+    scene.addNode(node1)
     node1.setPos(20, 30)
     node1.addDefaultInputConnector(['Input11'])
     node1.addDefaultOutputConnector(['Output11', 'Output12'])
 
     node2 = NodeItem('Node2')
-    scene.addItem(node2)
+    scene.addNode(node2)
     node2.setPos(160, 180)
     node2.addDefaultInputConnector(['Input21', 'Input22'])
     node2.addDefaultOutputConnector(['Output21', 'Output22', 'Output23'])

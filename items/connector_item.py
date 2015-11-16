@@ -91,7 +91,10 @@ class IOConnectorItem(BaseConnectorItem):
 
         self._ioType = ioType
         self._name = name
-        self._fullname = str(self.parentItem().name()) + ':' + self._name
+        if parent is None:
+            self._fullname = None
+        else:
+            self._fullname = str(self.parentItem().name()) + ':' + self._name
 
         self._connections = dict()
         self._ports = dict()
@@ -106,6 +109,16 @@ class IOConnectorItem(BaseConnectorItem):
             self._ports[name] = port
 
         self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges, True)
+
+    def setParentItem(self, parent):
+        BaseConnectorItem.setParentItem(self, parent)
+        if parent is None:
+            self._fullname = self._name
+        else:
+            self._fullname = str(self.parentItem().name()) + ':' + self._name
+
+        for port in self._ports.itervalues():
+            port.setParentFullName(self._fullname)
 
     def name(self):
         return self._name
@@ -130,16 +143,31 @@ class IOConnectorItem(BaseConnectorItem):
     def _addConnection(self, portName, conn):
         raise NotImplementedError()
 
-    def removeConnection(self, portName):
-        if portName in self._connections:
-            del self._connections[portName]
+    def removeConnection(self, connection):
+        for name, conn in self._connections.iteritems():
+            if conn == connection:
+                del self._connections[name]
+                return
+
+        raise RuntimeError('%s connection is not present' % connection.name())
+
+    def removeConnectionByPortName(self, portName):
+        if portName not in self._connections:
+            raise RuntimeError('%s port is not connected or present' % portName)
+
+        del self._connections[portName]
 
     def removeAllConnections(self):
-        for portName in self._connections:
-            del self._connections[portName]
+        self._connections = dict()
 
     def isConnected(self, portName):
         return portName in self._connections
+
+    def connectionCount(self):
+        return len(self._connections)
+
+    def portCount(self):
+        return len(self._ports)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemScenePositionHasChanged:
@@ -163,9 +191,10 @@ class InputConnectorItem(IOConnectorItem):
             connItem.setEnd(pos)
 
     def _addConnection(self, portName, conn):
-        pos = self._ports[portName].scenePos()
+        port = self._ports[portName]
+        pos = port.scenePos()
         conn.setEnd(pos)
-        conn.setEndPortName(self._fullname)
+        conn.setEndPortName(port.fullname())
 
 
 class OutputConnectorItem(IOConnectorItem):
@@ -181,6 +210,7 @@ class OutputConnectorItem(IOConnectorItem):
             connItem.setStart(pos)
 
     def _addConnection(self, portName, conn):
-        pos = self._ports[portName].scenePos()
+        port = self._ports[portName]
+        pos = port.scenePos()
         conn.setStart(pos)
-        conn.setStartPortName(self._fullname)
+        conn.setStartPortName(port.fullname())

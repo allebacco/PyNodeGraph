@@ -10,7 +10,11 @@ class PortItem(QGraphicsEllipseItem):
 
         self._name = name
 
-        self._fullname = parent.fullname() + ':' + name
+        pfname = parent.fullname()
+        if pfname is not None:
+            self._fullname = pfname + ':' + name
+        else:
+            self._fullname = parent.name() + ':' + name
 
         pen = QPen(QColor('#000000'))
         pen.setWidth(3)
@@ -31,6 +35,9 @@ class PortItem(QGraphicsEllipseItem):
 
     def fullname(self):
         return self._fullname
+
+    def setParentFullName(self, pfname):
+        self._fullname = pfname + ':' + self._name
 
     def mousePressEvent(self, mouseEvent):
         """Manage the mouse pressing.

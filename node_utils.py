@@ -17,3 +17,10 @@ def portNameFromFullname(fullname):
     if len(n) < 3:
         return None
     return n[2]
+
+
+def getItemNames(fullname):
+    n = fullname.split(':')
+    if len(n) < 3:
+        return None, None, None
+    return n[0], n[1], n[2]

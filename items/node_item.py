@@ -1,9 +1,9 @@
 from PyQt4.Qt import Qt
-from PyQt4.QtCore import QRectF
 from PyQt4.QtGui import QGraphicsItem, QGraphicsObject
 
 from core_item import CoreItem
-from connector_item import InputConnectorItem, OutputConnectorItem
+from connector_item import InputConnectorItem, OutputConnectorItem, IOConnectorItem
+from node_utils import getItemNames
 
 
 class NodeItem(QGraphicsObject):
@@ -12,8 +12,6 @@ class NodeItem(QGraphicsObject):
         QGraphicsObject.__init__(self, parent=parent)
 
         self._coreItem = CoreItem(40, parent=self)
-        self._inputConnector = None
-        self._outputConnector = None
 
         self._isSelected = False
         self._isHover = False
@@ -26,6 +24,8 @@ class NodeItem(QGraphicsObject):
         self.setAcceptDrops(True)
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.ItemHasNoContents, True)
+
+        self.setToolTip(name)
 
     def name(self):
         return str(self.objectName())
@@ -50,76 +50,94 @@ class NodeItem(QGraphicsObject):
         self._isHover = False
 
     def addDefaultInputConnector(self, names):
-        inputConn = self._inputConnector
-
-        # Remove previous connector
+        inputConn = self._connectors.get('in', None)
         if inputConn is not None:
-            inputConn.setParentItem(None)
-            self.scene().removeItem(inputConn)
-        inputConn = None
+            raise RuntimeError('Connector in is already present')
 
-        if names is not None and len(names) > 0:
-            inputConn = InputConnectorItem('in', names, parent=self)
-
-        self._inputConnector = inputConn
-        self._connectors['in'] = inputConn
+        inputConn = InputConnectorItem('in', names)
+        self.addConnector(inputConn)
 
     def addDefaultOutputConnector(self, names):
         outputConn = self._connectors.get('out', None)
-
-        # Remove previous connector
         if outputConn is not None:
-            outputConn.setParentItem(None)
-            self.scene().removeItem(outputConn)
-            del self._connectors['out']
-        outputConn = None
+            raise RuntimeError('Connector out is already present')
 
-        if names is not None and len(names) > 0:
-            outputConn = OutputConnectorItem('out', names, parent=self)
-
-        self._outputConnector = outputConn
-        self._connectors['out'] = outputConn
+        outputConn = OutputConnectorItem('out', names)
+        self.addConnector(outputConn)
 
     def addConnector(self, connector):
         name = connector.name()
         if name in self._connectors:
-            return False
+            raise RuntimeError('Connector %s is already present' % name)
 
+        connector.setParentItem(self)
         self._connectors[name] = connector
-        return True
+
+        if __debug__:
+            for port in connector._ports.itervalues():
+                port._fullname.startswith(self.name())
 
     def addConnection(self, portFullname, connection):
-        port = portFullname.split(':')
-        assert len(port) == 3
-        assert port[0] == self.name()
-        connectorName = port[1]
-        portName = port[2]
+        print portFullname
+        nodeName, connectorName, portName = getItemNames(portFullname)
+        assert nodeName == self.name()
+        assert connectorName in self._connectors
+        assert portName in self._connectors[connectorName]._ports
 
         connector = self._connectors[connectorName]
         return connector.addConnection(portName, connection)
 
-    def removeConnector(self, connectorName):
-        connector = self._connectors.get(connectorName, None)
-        if connector is None:
-            return
+    def connector(self, name):
+        return self._connectors[name]
 
-        # TODO
+    def connectorNames(self):
+        return self._connectors.keys()
 
-    def removeConnection(self, portFullname):
-        port = portFullname.split(':')
-        assert len(port) == 3
-        assert port[0] == self.name()
-        connectorName = port[1]
-        portName = port[2]
+    def removeConnector(self, connector):
+        name = connector.name()
+        if name not in self._connectors:
+            raise ValueError('Node has no connector %s' % name)
+        numConnections = connector.connectionCount()
+        if numConnections > 0:
+            return RuntimeError('Connector %s has %s connections' % (name, numConnections))
+
+        connector.setParentItem(None)
+        self.scene().removeItem(connector)
+        del self._connectors[name]
+
+    def removeConnection(self, connectionItem):
+        assert isinstance(connectionItem, IOConnectorItem)
+        ok = False
+        for connector in self._connectors.itervalues():
+            ok = connector.removeConnection(connectionItem)
+            if ok:
+                return
+
+        raise RuntimeError('Unable to remove connection %s' % connectionItem.name())
+
+    def removeConnectionByPortName(self, portFullname):
+        assert isinstance(portFullname, str)
+
+        print portFullname
+        nodeName, connectorName, portName = getItemNames(portFullname)
+
+        if self.name() != nodeName:
+            raise RuntimeError('%s and %s are not the same node' % (self.name(), nodeName))
+        if connectorName not in self._connectors:
+            raise RuntimeError('Node %s does not have connector %s' % (nodeName, connectorName))
 
         connector = self._connectors[connectorName]
-        connector.removeConnection(portName)
+        connector.removeConnectionByPortName(portName)
 
     def isConnected(self, portFullname):
         port = portFullname.split(':')
-        assert len(port) == 3
-        assert port[0] == self.name()
-        connectorName = port[1]
-        portName = port[2]
 
+        assert len(port) == 3
+
+        connectorName = port[1]
+
+        assert port[0] == self.name()
+        assert connectorName in self._connectors.iterkeys()
+
+        portName = port[2]
         return self._connectors[connectorName].isConnected(portName)
