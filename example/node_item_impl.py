@@ -16,6 +16,7 @@ class NodeItemImpl(NodeItem):
         NodeItem.__init__(self, name, parent=parent)
 
     def contextMenuEvent(self, event):
+        event.accept()
 
         menu = QMenu()
         addConnectorAction = menu.addAction("Add connector")

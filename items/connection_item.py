@@ -15,9 +15,7 @@ class ConnectionItem(QGraphicsPathItem):
         self._startPos = None
         self._endPos = None
 
-        brush = QBrush(QColor(Qt.black))
-
-        pen = QPen(brush, 2.0)
+        pen = QPen(QBrush(QColor(Qt.black)), 2.0)
         self.setPen(pen)
 
     def setStart(self, pos):
@@ -51,8 +49,8 @@ class ConnectionItem(QGraphicsPathItem):
     def name(self):
         return str(self._startName) + '->' + str(self._endName)
 
-    def startName(self):
+    def startPortName(self):
         return self._startName
 
-    def endName(self):
+    def endPortName(self):
         return self._endName

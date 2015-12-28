@@ -1,6 +1,5 @@
 import math
 
-from PyQt4.Qt import Qt
 from PyQt4.QtCore import QRectF, QPointF
 from PyQt4.QtGui import QGraphicsPathItem, QPen, QBrush, QColor, QPainterPath, QGraphicsItem
 

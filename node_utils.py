@@ -1,5 +1,4 @@
 
-
 def nodeNameFromFullname(fullname):
     n = fullname.split(':')[0]
     return n

@@ -91,12 +91,11 @@ class NodeGraphScene(QGraphicsScene):
         else:
             self._draggedLineItem.setEndpoint(pos1)
 
-        underItems = self.items(pos1)
         vaildItem = None
 
         if QLineF(pos0, pos1).length() > 5.0:
             # Check if line is over other PortItem
-            for item in underItems:
+            for item in self.items(pos1):
                 if isinstance(item, PortItem):
                     vaildItem = item
                     print item.name()
@@ -114,8 +113,8 @@ class NodeGraphScene(QGraphicsScene):
                 name2 = vaildItem.fullname()
                 self.sigCreateConnection.emit(name1, name2)
 
-    @pyqtSlot(str, str)
-    def addConnection(self, port1Name, port2Name):
+    @pyqtSlot(str, str, ConnectionItem)
+    def addConnection(self, port1Name, port2Name, connItem):
         port1Name = str(port1Name)
         port2Name = str(port2Name)
 
@@ -123,21 +122,20 @@ class NodeGraphScene(QGraphicsScene):
         node2Name = port2Name.split(':')[0]
 
         if node1Name == node2Name:
-            raise RuntimeError('%s and %s belong to the same node %s' % (port1Name, port2Name, node1Name))
+            return False
 
         node1 = self.nodeFromName(node1Name)
         node2 = self.nodeFromName(node2Name)
 
         if node1.isConnected(port1Name) or node2.isConnected(port2Name):
-            return
+            return False
 
-        conn = ConnectionItem()
-        self.addItem(conn)
-        node1.addConnection(port1Name, conn)
-        node2.addConnection(port2Name, conn)
+        self.addItem(connItem)
+        node1.addConnection(port1Name, connItem)
+        node2.addConnection(port2Name, connItem)
 
-        assert conn.startName() is not None
-        assert conn.endName() is not None
+        assert connItem.startPortName() is not None
+        assert connItem.endPortName() is not None
 
     @pyqtSlot(str, str)
     def removeConnectionByPortNames(self, startName, endName):
@@ -162,10 +160,10 @@ class NodeGraphScene(QGraphicsScene):
     @pyqtSlot(ConnectionItem)
     def removeConnection(self, connectionItem):
         assert isinstance(connectionItem, ConnectionItem)
-        assert connectionItem.startName() is not None
-        assert connectionItem.endName() is not None
+        assert connectionItem.startPortName() is not None
+        assert connectionItem.endPortName() is not None
 
-        self.removeConnectionByPortNames(connectionItem.startName(), connectionItem.endName())
+        self.removeConnectionByPortNames(connectionItem.startPortName(), connectionItem.endPortName())
 
     @pyqtSlot(NodeItem)
     def removeNode(self, nodeItem):
