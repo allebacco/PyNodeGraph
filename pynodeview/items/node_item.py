@@ -3,7 +3,7 @@ from PyQt4.QtGui import QGraphicsItem, QGraphicsObject
 
 from core_item import CoreItem
 from connector_item import InputConnectorItem, OutputConnectorItem, IOConnectorItem
-from node_utils import getItemNames
+from ..node_utils import getItemNames
 
 
 class NodeItem(QGraphicsObject):
