@@ -182,7 +182,3 @@ class NodeGraphScene(QGraphicsScene):
 
         # Remove the node
         self.removeItem(nodeItem)
-
-        print 'Nodes in scene:'
-        for item in self.nodeItems():
-            print '\t', item.name()

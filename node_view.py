@@ -1,7 +1,7 @@
 from PyQt4.Qt import Qt
 from PyQt4.QtGui import QGraphicsView
 
-from nodegraph_scene import NodeGraphScene
+from node_scene import NodeGraphScene
 
 
 class NodeGraphView(QGraphicsView):
