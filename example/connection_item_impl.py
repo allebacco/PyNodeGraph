@@ -1,5 +1,6 @@
 from PyQt4.QtGui import QMenu
-from pynodeview import ConnectionItem
+
+from pynodegraph import ConnectionItem
 
 
 class ConnectionItemImpl(ConnectionItem):

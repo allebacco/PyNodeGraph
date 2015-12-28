@@ -1,12 +1,10 @@
 from PyQt4.Qt import pyqtSlot
 from PyQt4.QtGui import QMainWindow, QInputDialog
 
-#from node_view import NodeGraphView
+from pynodegraph import NodeGraphView, InputConnectorItem, OutputConnectorItem
+
 from node_item_impl import NodeItemImpl
 from connection_item_impl import ConnectionItemImpl
-#from items.connector_item import InputConnectorItem, OutputConnectorItem
-
-from pynodeview import NodeGraphView, InputConnectorItem, OutputConnectorItem
 
 
 class MainWindow(QMainWindow):

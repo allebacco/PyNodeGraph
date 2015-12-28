@@ -9,7 +9,7 @@ with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='pynodeview',
+    name='pynodegraph',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -20,7 +20,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/allebacco/PyNodeView',
+    url='https://github.com/allebacco/PyNodeGraph',
 
     # Author details
     author='Alessandro Bacchini',

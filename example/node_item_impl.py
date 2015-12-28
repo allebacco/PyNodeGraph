@@ -1,8 +1,7 @@
 from PyQt4.Qt import pyqtSignal
 from PyQt4.QtGui import QMenu
 
-from pynodeview import NodeItem
-from pynodeview import IOConnectorItem
+from pynodegraph import NodeItem, IOConnectorItem
 
 
 class NodeItemImpl(NodeItem):
