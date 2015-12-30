@@ -1,4 +1,3 @@
-from PyQt4.Qt import Qt
 from PyQt4.QtGui import QGraphicsView
 
 from node_scene import NodeGraphScene
